@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "des_tables": "cpp",
+        "bitset": "cpp",
+        "ostream": "cpp"
+    }
+}
