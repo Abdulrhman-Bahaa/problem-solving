@@ -39,6 +39,7 @@ int main() {
 
         #ifdef DEBUG
             cout << "\n------------------- Round " << (int)i + 1 << " -----------------" << endl;
+            cout << "key " << (int)i + 1 << ": " << subkeys[i];
         #endif
 
         function_f_result = function_f(r[i], subkeys[i]);
@@ -46,8 +47,7 @@ int main() {
         r[i + 1] = l[i] ^ function_f_result;    /* R1 = L0 + f(R0,K1)  */
 
         #ifdef DEBUG
-            cout << "L" << (int)i + 1 << ": " << l[i + 1] << endl;
-            cout << "R" << (int)i + 1 << ": " << r[i + 1] << endl;
+            cout << "L" << (int)i + 1 << ": " << l[i + 1] << " | R" << (int)i + 1 << ": " << r[i + 1] << endl;
         #endif
     }
 

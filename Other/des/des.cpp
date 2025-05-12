@@ -13,6 +13,7 @@ bitset<48>* sub_key_generator(const bitset<64>& key) {
         cout << "\n------------------ Sub Keys Generation -----------------" << endl;
         cout << "\nKey: " << key << endl;
         cout << "Permuted Key(PC-1): " << permuted << endl;
+        cout << "\nSplit into C and D, and apply left shifts:";
     #endif
 
     /* Split the permuted key into two halves: C and D. */
@@ -35,7 +36,7 @@ bitset<48>* sub_key_generator(const bitset<64>& key) {
     }
 
     #ifdef DEBUG
-        cout << endl;
+        cout << "\nConcatenate C and D and apply PC-2: " << endl;
     #endif
 
     /* The PC-2 table is used to permute the combined C and D halves into the final subkey. */
@@ -83,8 +84,6 @@ bitset<32> function_f(const bitset<32>& r, const bitset<48>& k) {
 
     #ifdef DEBUG
         cout << "\nExpanded R: " << expanded_r << endl;
-        cout << "XOR Result: ";
-        print_binary(xor_result.to_ullong(), 48);
     #endif
 
     for (uint8_t i = 0; i < 8; i++) {
@@ -114,7 +113,7 @@ bitset<32> function_f(const bitset<32>& r, const bitset<48>& k) {
 
     sbox_result_concatenated = permute<32, 32>(sbox_result_concatenated, P);
     #ifdef DEBUG
-        cout << "F function result: " << sbox_result_concatenated << endl;
+        cout << "f(R0,K1) = " << sbox_result_concatenated << endl;
     #endif
 
     return sbox_result_concatenated;
