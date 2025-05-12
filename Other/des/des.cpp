@@ -2,38 +2,43 @@
 #include "des.h"
 
 /* Function Definitions -----------------------------------------------------*/
-
 bitset<48>* sub_key_generator(const bitset<64>& key) {
-    uint64_t pc1_key = 0;
 
+    /* The PC-1 table is used to permute the key bits before splitting it into two halves. */
     bitset<56> permuted = permute<64, 56>(key, PC1), c_d;
     bitset<28> c[DES_ROUNDS + 1], d[DES_ROUNDS + 1];
     static bitset<48> subkeys[16];
 
     #ifdef DEBUG
-        cout << "Key: " << key << endl;
+        cout << "\n------------------ Sub Keys Generation -----------------" << endl;
+        cout << "\nKey: " << key << endl;
         cout << "Permuted Key(PC-1): " << permuted << endl;
     #endif
 
+    /* Split the permuted key into two halves: C and D. */
     for (uint8_t i = 0; i < 28; ++i) {
         c[0][27 - i] = permuted[55 - i];
         d[0][27 - i] = permuted[27 - i];
     }
 
     #ifdef DEBUG
-        cout << "C" << 0 << ": " << c[0] << endl;
-        cout << "D" << 0 << ": " << d[0] << endl;
+        cout << "\nC" << 0 << ": " << c[0] << "  D" << 0 << ": " << d[0] << endl;
     #endif
 
+    /* Apply the left shifts and generate the subkeys. */
     for (uint8_t i = 0; i < DES_ROUNDS; i++) {
         apply_iterations_left_shift(c[i], d[i], c[i + 1], d[i + 1], ITERATIONS_LEFT_SHIFT[i]);
 
         #ifdef DEBUG
-            cout << "C" << (int)i + 1 << ": " << c[i + 1] << endl;
-            cout << "D" << (int)i + 1 << ": " << d[i + 1] << endl;
+            cout << "C" << (int)i + 1 << ": " << c[i + 1] << "  D" << (int)i + 1 << ": " << d[i + 1] << endl;
         #endif
     }
 
+    #ifdef DEBUG
+        cout << endl;
+    #endif
+
+    /* The PC-2 table is used to permute the combined C and D halves into the final subkey. */
     for (uint8_t i = 0; i < DES_ROUNDS; i++) {
 
         for (uint8_t j = 0; j < 28; j++) {
@@ -44,6 +49,7 @@ bitset<48>* sub_key_generator(const bitset<64>& key) {
             c_d[27 - j] = d[i + 1][27 - j];
         }
 
+        /* Apply the PC-2 permutation to the combined C and D halves. */
         subkeys[i] = permute<56, 48>(c_d, PC2);
 
         #ifdef DEBUG
@@ -76,8 +82,8 @@ bitset<32> function_f(const bitset<32>& r, const bitset<48>& k) {
     xor_result = expanded_r ^ k;
 
     #ifdef DEBUG
-        cout << "Expanded R: " << expanded_r << endl;
-        cout << "XOR Result: " << xor_result << endl;
+        cout << "\nExpanded R: " << expanded_r << endl;
+        cout << "XOR Result: ";
         print_binary(xor_result.to_ullong(), 48);
     #endif
 
@@ -96,10 +102,7 @@ bitset<32> function_f(const bitset<32>& r, const bitset<48>& k) {
         sbox_result[i] = S_BOXES[i][row.to_ullong()][column.to_ullong()];
 
         #ifdef DEBUG
-            cout << "S" << (int)i + 1 << " Result: " << sbox_result[i] << endl;
-            cout << "S" << (int)i + 1 << " Row: " << row.to_ullong() << endl;
-            cout << "S" << (int)i + 1 << " Column: " << column.to_ullong() << endl;
-            cout << "S" << (int)i + 1 << " Value: " << sbox_result[i].to_ullong() << endl;
+            cout << "S" << (int)i + 1 << " Value: " << sbox_result[i].to_ullong() << " | " ;
         #endif
     }
 
@@ -117,16 +120,32 @@ bitset<32> function_f(const bitset<32>& r, const bitset<48>& k) {
     return sbox_result_concatenated;
 }
 
-
 void print_binary(const uint64_t number, const uint8_t number_of_bits) {
-    uint8_t bit_value = 0;
-    for (uint8_t i = 0; i < number_of_bits; i++) {
-        bit_value = ((number >> (number_of_bits - i - 1)) & 1);
-
-        if (i % 6 == 0 && i != 0) {
-            printf(" ");
+    for (int i = number_of_bits - 1; i >= 0; --i) {
+        cout << ((number >> i) & 1);
+        if (i % 4 == 0) {
+            cout << " ";
         }
-        printf("%i", bit_value);
     }
-    printf("\n");
+    cout << endl;
+}
+
+void print_block(const bitset<64>& plaintext, const bitset<64>& key, const bitset<64>& ciphertext) {
+    cout << "\n================ DES Encryption =================" << endl;
+
+    cout << "\n>>> Input:" << endl;
+    cout << "Plaintext : ";
+    print_binary(plaintext.to_ullong(), 64);
+    cout << "\t    0x" << hex << uppercase << plaintext.to_ullong() << endl << endl;
+
+    cout << "Key       : ";
+    print_binary(key.to_ullong(), 64);
+    cout << "\t    0x" << hex << uppercase << key.to_ullong() << endl << endl;
+
+    cout << "\n>>> Output:" << endl;
+    cout << "Ciphertext: " ;
+    print_binary(ciphertext.to_ullong(), 64);
+    cout << "\t    0x" << hex << uppercase << ciphertext.to_ullong() << endl;
+
+    cout << "\n=================================================\n" << endl;
 }

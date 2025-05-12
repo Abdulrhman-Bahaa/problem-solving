@@ -15,7 +15,7 @@
 using namespace std;
 
 /* Macro Declarations -------------------------------------------------------*/
-// #define DEBUG                 // Uncomment to enable debug output
+#define DEBUG                 // Uncomment to enable debug output
 #define DES_ROUNDS      16
 #define DES_KEY_BITS    56
 #define DES_BLOCK_BITS  64
@@ -47,5 +47,7 @@ void apply_iterations_left_shift(bitset<28>& c_in, bitset<28>& d_in, bitset<28>&
 void print_binary(const uint64_t number, const uint8_t number_of_bits);
 
 bitset<32> function_f(const bitset<32>& r, const bitset<48>& k);
+
+void print_block(const bitset<64>& plaintext, const bitset<64>& key, const bitset<64>& ciphertext) ;
 
 #endif	/* DES_H */
