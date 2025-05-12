@@ -84,6 +84,7 @@ bitset<32> function_f(const bitset<32>& r, const bitset<48>& k) {
 
     #ifdef DEBUG
         cout << "\nExpanded R: " << expanded_r << endl;
+        cout << "XOR with K: " << xor_result << endl;
     #endif
 
     for (uint8_t i = 0; i < 8; i++) {
@@ -111,10 +112,12 @@ bitset<32> function_f(const bitset<32>& r, const bitset<48>& k) {
         }
     }
 
-    sbox_result_concatenated = permute<32, 32>(sbox_result_concatenated, P);
     #ifdef DEBUG
-        cout << "f(R0,K1) = " << sbox_result_concatenated << endl;
+        cout << "\nApply the P permutation to the concatenated S-Box result: " << endl;
     #endif
+    /* Apply the P permutation to the concatenated S-Box result. */
+
+    sbox_result_concatenated = permute<32, 32>(sbox_result_concatenated, P);
 
     return sbox_result_concatenated;
 }
