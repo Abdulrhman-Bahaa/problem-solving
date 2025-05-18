@@ -7,51 +7,96 @@
  *          structure and consists of 16 rounds of permutation and substitution operations.
  * \author  Abdulrhman Bahaa
  * \date    2025-04-29
- * \warning    This implementation is for educational purposes only and should not be used in production systems.
+ * \warning This implementation is for educational purposes only and should not be used in production systems.
  *          DES is considered weak by modern standards and should not be used for secure applications.
  * \see     https://page.math.tu-berlin.de/~kant/teaching/hess/krypto-ws2006/des.htm
 */
 #include "des.h"
 
 /* Main Function ------------------------------------------------------------*/
-int main() {
-    bitset<64> plaintext("0000000100100011010001010110011110001001101010111100110111101111"), 
-    key("0001001100110100010101110111100110011011101111001101111111110001"),
-    ciphertext ,r_16_l_16_concatenated;
+int main(int argc, char* argv[]) {
 
+    /* Variable Declarations */
+    bool show_steps = false;
+    bitset<64> message, key, ciphertext, r_16_l_16_concatenated, ip_permuted;
+    bitset<48>* subkeys = nullptr;
     bitset<32> l[DES_ROUNDS], r[DES_ROUNDS], function_f_result;
 
+    /* Check the number of arguments and their validity. */
+    if (argc != 3 && argc != 4) {
+        cout << rang::fg::red << "Error: Invalid number of arguments." << rang::style::reset << endl
+             << "Usage: " << argv[0] << " <message>" << " <key>" << " --show-steps(optional, default: false)" << endl;
+        return 1;
+    }
+    else {
+        if (argc == 4) {
+            if (string(argv[3]) == "--show-steps") {
+                show_steps = true;
+                cout << "Debug mode enabled." << endl;
+            }
+            else {
+                cout << rang::fg::red << "Error: Invalid flag." << rang::style::reset << endl
+                     << "Usage: " << argv[0] << " <message>" << " <key>" << " --show-steps(optional, default: false)" << endl;
+                return 1;
+            }
+        }
+
+        switch(argv[1][1]) {
+            case 'x':
+                message = bitset<64>(stoull(argv[1] + 2, nullptr, 16));
+                key = bitset<64>(stoull(argv[2] + 2, nullptr, 16));
+                break;
+            case 'd':
+                message = bitset<64>(stoull(argv[1] + 2, nullptr, 10));
+                key = bitset<64>(stoull(argv[2] + 2, nullptr, 10));
+                break;
+            case 'b':
+                message = bitset<64>(stoull(argv[1] + 2, nullptr, 2));
+                key = bitset<64>(stoull(argv[2] + 2, nullptr, 2));
+                break;
+            default:
+                cout << rang::fg::red << "Error: Invalid message/key format. Use 0x, 0d or 0b." << rang::style::reset << endl;
+                return 1;
+        }
+
+        if (message.size() != 64 || key.size() != 64) {
+            cout << rang::fg::red << "Error: Message and key must be 64 bits long." << rang::style::reset << endl;
+            return 1;
+        }
+    }
+
     /* Step 1: Create 16 subkeys, each of which is 48-bits long. */
-    bitset<48>* subkeys = sub_key_generator(key);
+    subkeys = sub_key_generator(key, show_steps);
 
     /* Step 2: Encode each 64-bit block of data. */
     /* Apply the initial permutation (IP) to the message.*/ 
-    bitset<64> permuted_plaintext = permute<64, 64>(plaintext, DES_IP);
+    ip_permuted = permute<64, 64>(message, IP);
 
     /* Split the permuted message into two halves: left (l) and right (r). */
     for (uint8_t i = 0; i < 32; ++i) {
-        l[0][31 - i] = permuted_plaintext[63 - i];
-        r[0][31 - i] = permuted_plaintext[31 - i];
+        l[0][31 - i] = ip_permuted[63 - i];
+        r[0][31 - i] = ip_permuted[31 - i];
     }
 
     /* Apply the 16 rounds of the DES algorithm. */
     for (uint8_t i = 0; i < DES_ROUNDS; i++) {
 
-        #ifdef DEBUG
-            cout << "\n------------------- Round " << (int)i + 1 << " -----------------" << endl;
-            cout << "Subkey " << (int)i + 1 << ": " << subkeys[i];
-        #endif
+        /* Print Debug Information if show_steps is enabled. */
+        if (show_steps) {
+            cout << rang::fg::cyan << "\n------------------- Round " << (int)i + 1 << " -----------------" << rang::style::reset << endl
+                 << "Subkey " << (int)i + 1 << ": " << subkeys[i] << endl;
+        }
 
-        function_f_result = function_f(r[i], subkeys[i]);
+        function_f_result = function_f(r[i], subkeys[i], show_steps);
         l[i + 1] = r[i];
         r[i + 1] = l[i] ^ function_f_result;    /* R1 = L0 + f(R0,K1)  */
 
-        cout << "f(R" << (int)i + 1 << ", K" << (int)i + 1 << ") = " << function_f_result << endl;
+        if (show_steps) {
+            cout << "f(R" << (int)i + 1 << ", K" << (int)i + 1 << ") = " << function_f_result << endl
+                 << "R" << (int)i + 1 << " = " << "L" << (int)i << " + f(R" << (int)i << ", K" << (int)i + 1 << ") = " << r[i + 1] << endl
+                 << "L" << (int)i + 1 << " = " <<  "R" << (int)i << " = " << l[i + 1] << endl;
 
-        #ifdef DEBUG
-            cout << "L" << (int)i + 1 << " = " <<  "R" << (int)i << " = " << l[i + 1] << endl;
-            cout << "R" << (int)i + 1 << " = " << "L" << (int)i << " + f(R" << (int)i << ", K" << (int)i + 1 << ") = " << r[i + 1] << endl;
-        #endif
+        }
     }
 
     /* Concatenate the last round's right and left halves. */
@@ -62,10 +107,10 @@ int main() {
     }
 
     /* Apply the final permutation (IP-1) to the concatenated result. */
-    ciphertext = permute<64, 64>(r_16_l_16_concatenated, DES_IP_INV);
+    ciphertext = permute<64, 64>(r_16_l_16_concatenated, IP_INV);
 
     /* Print the block. */
-    print_block(plaintext, key, ciphertext);
+    print_block(message, key, ciphertext);
 
     return 0;
 }
